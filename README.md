@@ -78,10 +78,10 @@ src/
 - [x] Dashboard overview
 - [x] Settings & export/import
 
-### Phase 2: Content Feed
-- [ ] Manual feed subscription
-- [ ] Time limit warnings
-- [ ] Break reminders
+### Phase 2: Content Feed ✅ COMPLETE
+- [x] Manual feed subscription
+- [x] Time limit warnings
+- [x] Break reminders
 
 ### Phase 3: Polish & Deploy
 - [ ] UI/UX refinement

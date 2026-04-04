@@ -1,6 +1,6 @@
-import { useState } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useAppStore } from '../store/appStore'
-import { Plus, Trash2, ExternalLink, Clock } from 'lucide-react'
+import { Plus, Trash2, ExternalLink, Clock, Bell, BellOff } from 'lucide-react'
 
 export default function Feed() {
   const { feedItems, addFeedItem, deleteFeedItem } = useAppStore()
@@ -11,8 +11,76 @@ export default function Feed() {
     source: '',
     notes: '',
   })
-  const [timeLimit, setTimeLimit] = useState(30) // minutes per day
-  const [todayUsage, setTodayUsage] = useState(0)
+  
+  // Time tracking state
+  const [timeLimit, setTimeLimit] = useState(() => {
+    const saved = localStorage.getItem('feedTimeLimit')
+    return saved ? parseInt(saved) : 30
+  })
+  const [todayUsage, setTodayUsage] = useState(() => {
+    const saved = localStorage.getItem('feedUsage')
+    const savedDate = localStorage.getItem('feedUsageDate')
+    const today = new Date().toDateString()
+    
+    if (saved && savedDate === today) {
+      return parseInt(saved)
+    }
+    return 0
+  })
+  const [showBreakReminder, setShowBreakReminder] = useState(false)
+  const [breakRemindersEnabled, setBreakRemindersEnabled] = useState(true)
+  const sessionTimerRef = useRef(null)
+  const lastSaveRef = useRef(Date.now())
+
+  // Save settings to localStorage
+  useEffect(() => {
+    localStorage.setItem('feedTimeLimit', timeLimit.toString())
+  }, [timeLimit])
+
+  // Track time spent on feed page
+  useEffect(() => {
+    // Reset usage if it's a new day
+    const today = new Date().toDateString()
+    const savedDate = localStorage.getItem('feedUsageDate')
+    if (savedDate !== today) {
+      setTodayUsage(0)
+      localStorage.setItem('feedUsageDate', today)
+    }
+
+    // Start tracking session time
+    sessionTimerRef.current = setInterval(() => {
+      const now = Date.now()
+      const elapsed = Math.floor((now - lastSaveRef.current) / 1000) // seconds
+      
+      if (elapsed >= 10) { // Update every 10 seconds
+        setTodayUsage(prev => {
+          const newValue = prev + Math.floor(elapsed / 60)
+          localStorage.setItem('feedUsage', newValue.toString())
+          localStorage.setItem('feedUsageDate', today)
+          return newValue
+        })
+        lastSaveRef.current = now
+      }
+    }, 10000)
+
+    return () => {
+      if (sessionTimerRef.current) {
+        clearInterval(sessionTimerRef.current)
+      }
+    }
+  }, [])
+
+  // Show break reminder when approaching limit
+  useEffect(() => {
+    if (!breakRemindersEnabled) return
+    
+    const warningThreshold = timeLimit * 0.8 // 80% of limit
+    if (todayUsage >= warningThreshold && todayUsage < timeLimit) {
+      setShowBreakReminder(true)
+    } else {
+      setShowBreakReminder(false)
+    }
+  }, [todayUsage, timeLimit, breakRemindersEnabled])
 
   const handleAddItem = (e) => {
     e.preventDefault()
@@ -51,6 +119,13 @@ export default function Feed() {
     return todayUsage >= timeLimit
   }
 
+  const resetUsage = () => {
+    if (confirm('Reset today\'s usage counter?')) {
+      setTodayUsage(0)
+      localStorage.setItem('feedUsage', '0')
+    }
+  }
+
   return (
     <div className="max-w-3xl mx-auto">
       <div className="flex justify-between items-center mb-6">
@@ -63,6 +138,27 @@ export default function Feed() {
           Add Source
         </button>
       </div>
+
+      {/* Break Reminder Alert */}
+      {showBreakReminder && (
+        <div className="bg-yellow-900/30 border border-yellow-700 rounded-lg p-4 mb-6 flex items-center gap-3">
+          <Bell size={20} className="text-yellow-400" />
+          <div className="flex-1">
+            <p className="text-yellow-400 font-semibold">
+              ⏰ Time for a break? You've used {todayUsage}/{timeLimit} minutes today.
+            </p>
+            <p className="text-sm text-yellow-300/70">
+              Consider stepping away from the screen for a few minutes.
+            </p>
+          </div>
+          <button
+            onClick={() => setShowBreakReminder(false)}
+            className="text-yellow-400 hover:text-white"
+          >
+            ✕
+          </button>
+        </div>
+      )}
 
       {/* Time Limit Warning */}
       <div className={`rounded-lg p-4 border mb-6 ${
@@ -86,14 +182,24 @@ export default function Feed() {
               </p>
             )}
           </div>
-          <input
-            type="number"
-            min="5"
-            max="120"
-            value={timeLimit}
-            onChange={(e) => setTimeLimit(parseInt(e.target.value) || 30)}
-            className="bg-slate-700 text-white px-3 py-1 rounded w-20 text-center focus:outline-none focus:ring-2 focus:ring-purple-500"
-          />
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setBreakRemindersEnabled(!breakRemindersEnabled)}
+              className="text-slate-400 hover:text-white"
+              title={breakRemindersEnabled ? 'Disable break reminders' : 'Enable break reminders'}
+            >
+              {breakRemindersEnabled ? <Bell size={18} /> : <BellOff size={18} />}
+            </button>
+            <input
+              type="number"
+              min="5"
+              max="120"
+              value={timeLimit}
+              onChange={(e) => setTimeLimit(parseInt(e.target.value) || 30)}
+              className="bg-slate-700 text-white px-3 py-1 rounded w-20 text-center focus:outline-none focus:ring-2 focus:ring-purple-500"
+              title="Daily time limit in minutes"
+            />
+          </div>
         </div>
       </div>
 
@@ -202,6 +308,28 @@ export default function Feed() {
         </div>
       )}
 
+      {/* Usage Controls */}
+      <div className="mt-6 bg-slate-800 rounded-lg p-6 border border-slate-700">
+        <div className="flex justify-between items-center mb-4">
+          <h3 className="text-lg font-semibold">Usage Controls</h3>
+          <button
+            onClick={resetUsage}
+            className="text-sm text-purple-400 hover:text-purple-300"
+          >
+            Reset Today's Counter
+          </button>
+        </div>
+        <div className="flex items-center gap-3 text-sm text-slate-400">
+          <input
+            type="checkbox"
+            checked={breakRemindersEnabled}
+            onChange={(e) => setBreakRemindersEnabled(e.target.checked)}
+            className="rounded bg-slate-700 border-slate-600 text-purple-600 focus:ring-purple-500"
+          />
+          <span>Enable break reminders at 80% of time limit</span>
+        </div>
+      </div>
+
       {/* Info */}
       <div className="mt-6 bg-slate-800 rounded-lg p-6 border border-slate-700 text-slate-400 text-sm">
         <p className="mb-2">
@@ -210,8 +338,9 @@ export default function Feed() {
         <ul className="list-disc list-inside space-y-1 text-slate-500">
           <li>Add blogs, newsletters, YouTube channels, or any creators you value</li>
           <li>No algorithms deciding what you see — you're in control</li>
-          <li>Set daily time limits to prevent doom scrolling</li>
-          <li>Coming soon: Aggregate new content from your sources in one place</li>
+          <li>Time tracking runs while you're on this page</li>
+          <li>Break reminders help you develop healthy browsing habits</li>
+          <li>All usage data stored locally in your browser</li>
         </ul>
       </div>
     </div>
