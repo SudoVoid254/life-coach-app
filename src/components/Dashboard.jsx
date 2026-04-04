@@ -1,15 +1,20 @@
 import { useEffect } from 'react'
 import { useAppStore } from '../store/appStore'
+import { formatDate } from '../utils/dateHelpers'
 
 export default function Dashboard() {
-  const { initialize, habits, moods } = useAppStore()
+  const initialize = useAppStore((state) => state.initialize)
+  const habits = useAppStore((state) => state.habits)
+  const moods = useAppStore((state) => state.moods)
+  const journalEntries = useAppStore((state) => state.journalEntries)
 
   useEffect(() => {
     initialize()
-  }, [])
+  }, [initialize])
 
-  const todayHabits = habits.filter((h) => h.completedToday).length
-  const todayMood = moods[moods.length - 1]
+  const today = formatDate(new Date())
+  const todayHabits = habits.filter((h) => (h.completions || []).includes(today)).length
+  const todayMood = moods.find((m) => formatDate(m.timestamp) === today)
 
   return (
     <div className="max-w-2xl mx-auto">
@@ -27,7 +32,7 @@ export default function Dashboard() {
         <div className="bg-slate-800 rounded-lg p-6 border border-slate-700">
           <h3 className="text-lg font-semibold mb-2">Current Mood</h3>
           <p className="text-4xl font-bold text-pink-400 mb-2">{todayMood?.mood || '-'}/10</p>
-          <p className="text-slate-400">{todayMood?.timestamp ? 'today' : 'no mood logged'}</p>
+          <p className="text-slate-400">{todayMood ? 'today' : 'no mood logged'}</p>
         </div>
       </div>
 
@@ -35,8 +40,8 @@ export default function Dashboard() {
       <div className="mt-6 bg-slate-800 rounded-lg p-6 border border-slate-700">
         <h3 className="text-lg font-semibold mb-4">Quick Stats</h3>
         <div className="text-slate-300 space-y-2">
-          <p>📝 Total journal entries: {0}</p>
-          <p>🎵 Feed subscriptions: {0}</p>
+          <p>📝 Total journal entries: {journalEntries.length}</p>
+          <p>🎯 Total habits: {habits.length}</p>
           <p>🔐 All data encrypted locally</p>
         </div>
       </div>
