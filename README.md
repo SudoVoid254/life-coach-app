@@ -70,13 +70,13 @@ src/
 
 ## 📚 Development Roadmap
 
-### Phase 1: Core Features (In Progress)
-- [ ] Encryption layer & local storage
-- [ ] Habit tracker UI
-- [ ] Mood logger with charts
-- [ ] Journal editor
-- [ ] Dashboard overview
-- [ ] Settings & export/import
+### Phase 1: Core Features ✅ COMPLETE
+- [x] Encryption layer & local storage
+- [x] Habit tracker UI
+- [x] Mood logger with charts
+- [x] Journal editor
+- [x] Dashboard overview
+- [x] Settings & export/import
 
 ### Phase 2: Content Feed
 - [ ] Manual feed subscription
