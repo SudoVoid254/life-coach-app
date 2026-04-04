@@ -251,6 +251,10 @@ export default function Feed() {
           onSubmit={handleAddItem}
           className="bg-slate-800 rounded-lg p-6 border border-slate-700 mb-4"
         >
+          <div className="bg-yellow-900/30 border border-yellow-700 rounded p-3 mb-4 text-sm text-yellow-300">
+            <strong>⚠️ Note:</strong> Some sites block embedding (Instagram, Twitter, Facebook, etc.). 
+            They'll open in a new tab instead. Sites like blogs, news, and documentation usually work great.
+          </div>
           <input
             type="text"
             placeholder="Title (e.g., 'Wait But Why')"
