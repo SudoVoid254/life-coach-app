@@ -1,9 +1,10 @@
 import nacl from 'tweetnacl'
+import naclUtil from 'tweetnacl-util'
 import { encode, decode } from 'js-base64'
 
 // Generate a random encryption key (32 bytes for secret key)
 export function generateKey() {
-  return nacl.utils.randomBytes(nacl.secretbox.keyLength)
+  return naclUtil.randomBytes(nacl.secretbox.keyLength)
 }
 
 // Derive key from password using simple hashing (not production-grade, but sufficient for MVP)
