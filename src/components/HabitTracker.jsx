@@ -57,7 +57,7 @@ export default function HabitTracker() {
       1,
       Math.floor((new Date() - new Date(habit.createdAt)) / (1000 * 60 * 60 * 24)) + 1
     )
-    const rate = Math.round((completions.length / daysSinceCreated) * 100)
+    const rate = Math.round((completions.length / (daysSinceCreated + 1)) * 100)
     return Math.min(rate, 100) // Cap at 100%
   }
 
