@@ -156,9 +156,21 @@ export default function Feed() {
   const handleRefresh = () => {
     if (selectedSource) {
       setIframeUrl(null)
+      setIframeError(false)
       setTimeout(() => setIframeUrl(selectedSource.url), 100)
     }
   }
+
+  // Detect when iframe fails to load (timeout if content doesn't appear)
+  useEffect(() => {
+    if (iframeUrl && !iframeError) {
+      const timeout = setTimeout(() => {
+        setIframeError(true)
+      }, 4000) // 4 second timeout
+
+      return () => clearTimeout(timeout)
+    }
+  }, [iframeUrl, iframeError])
 
   const handleOpenExternal = () => {
     if (selectedSource) {
@@ -276,21 +288,21 @@ export default function Feed() {
           </div>
           <input
             type="text"
-            placeholder="Title (e.g., 'Wait But Why')"
+            placeholder="Title (e.g., 'BBC News')"
             value={formData.title}
             onChange={(e) => setFormData({ ...formData, title: e.target.value })}
             className="w-full bg-slate-700 text-white px-4 py-2 rounded mb-4 focus:outline-none focus:ring-2 focus:ring-purple-500"
           />
           <input
             type="url"
-            placeholder="URL (e.g., 'https://waitbutwhy.com')"
+            placeholder="URL (e.g., 'https://bbc.com')"
             value={formData.url}
             onChange={(e) => setFormData({ ...formData, url: e.target.value })}
             className="w-full bg-slate-700 text-white px-4 py-2 rounded mb-4 focus:outline-none focus:ring-2 focus:ring-purple-500"
           />
           <input
             type="text"
-            placeholder="Source name (optional, e.g., 'Blog')"
+            placeholder="Source name (optional, e.g., 'News')"
             value={formData.source}
             onChange={(e) => setFormData({ ...formData, source: e.target.value })}
             className="w-full bg-slate-700 text-white px-4 py-2 rounded mb-4 focus:outline-none focus:ring-2 focus:ring-purple-500"
