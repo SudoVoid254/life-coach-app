@@ -54,15 +54,22 @@ export default function HabitTracker() {
     const completions = habit.completions || []
     if (completions.length === 0) return 0
 
+    // Ensure completions are unique and valid
+    const uniqueCompletions = [...new Set(completions.filter(c => c))]
+
     const createdDate = new Date(habit.createdAt)
     const today = new Date()
-    const isCreatedToday = createdDate.toDateString() === today.toDateString()
 
-    const daysSinceCreated = Math.floor((today - createdDate) / (1000 * 60 * 60 * 24))
+    // Calculate total days from creation to today, inclusive
+    const totalDays = Math.floor((today - createdDate) / (1000 * 60 * 60 * 24)) + 1
 
-    const totalDays = isCreatedToday ? 1 : daysSinceCreated + 1
+    // Count completions that are on or after creation date and on or before today
+    const validCompletions = uniqueCompletions.filter(completion => {
+      const compDate = new Date(completion)
+      return compDate >= createdDate && compDate <= today
+    })
 
-    const rate = Math.round((completions.length / totalDays) * 100)
+    const rate = Math.round((validCompletions.length / totalDays) * 100)
     return Math.min(rate, 100) // Cap at 100%
   }
 
