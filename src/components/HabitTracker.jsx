@@ -1,7 +1,8 @@
 import { useState } from 'react'
 import { useAppStore } from '../store/appStore'
 import { Trash2, Plus, Check, Info, Edit } from 'lucide-react'
-import { getStreak, formatDate, formatDateTime, isSameDay } from '../utils/dateHelpers'
+import { getStreak, formatDate, formatDateTime, isSameDay, formatFriendlyDate } from '../utils/dateHelpers'
+import HabitAnalytics from './HabitAnalytics'
 
 export default function HabitTracker() {
   const { habits, addHabit, updateHabit, deleteHabit } = useAppStore()
@@ -239,7 +240,7 @@ export default function HabitTracker() {
             }
 
             const completed = isCompletedToday(habit)
-            const streak = getStreak(habit.completions || [])
+            const streak = getStreak(habit.completions || [], habit.frequency)
             const rate = getCompletionRate(habit)
 
             return (
@@ -348,9 +349,20 @@ export default function HabitTracker() {
 
               return (
                 <div className="space-y-6">
-                  <div>
-                    <p className="text-sm text-slate-400 mb-1">Habit Name</p>
-                    <p className="text-lg font-semibold">{habit.name}</p>
+                  <div className="flex justify-between items-center">
+                    <div>
+                      <p className="text-sm text-slate-400 mb-1">Habit Name</p>
+                      <p className="text-lg font-semibold">{habit.name}</p>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-sm text-slate-400 mb-1">Frequency</p>
+                      <p className="text-lg font-semibold capitalize">{habit.frequency}</p>
+                    </div>
+                  </div>
+
+                  <div className="bg-slate-700/30 p-4 rounded-lg">
+                    <p className="text-sm text-slate-400 mb-3 font-medium">Analytics Overview</p>
+                    <HabitAnalytics completions={habit.completions || []} frequency={habit.frequency} />
                   </div>
 
                   <div>
@@ -368,8 +380,7 @@ export default function HabitTracker() {
                           .sort((a, b) => new Date(b) - new Date(a))
                           .map((date, idx) => (
                             <div key={idx} className="flex justify-between bg-slate-700/50 p-2 rounded text-sm">
-                              <span>{date}</span>
-                              <span className="text-slate-400">{formatDateTime(date).split(', ')[1] || ''}</span>
+                              <span>{formatFriendlyDate(date)}</span>
                             </div>
                           ))
                       )}
