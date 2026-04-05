@@ -17,7 +17,26 @@ export const useAppStore = create((set, get) => ({
       const habits = await loadFromDB('habits')
       const moods = await loadFromDB('moods')
       const journalEntries = await loadFromDB('journalEntries')
-      const feedItems = await loadFromDB('feedItems')
+      let feedItems = await loadFromDB('feedItems')
+
+      // Auto-add default sources on first load
+      if (!feedItems || feedItems.length === 0) {
+        const defaultSources = [
+          { title: 'BBC News', url: 'https://bbc.com', source: 'Default' },
+          { title: 'The New York Times', url: 'https://nytimes.com', source: 'Default' },
+          { title: 'The Guardian', url: 'https://theguardian.com', source: 'Default' },
+          { title: 'Reuters', url: 'https://reuters.com', source: 'Default' },
+          { title: 'CNN', url: 'https://cnn.com', source: 'Default' },
+          { title: 'The Washington Post', url: 'https://washingtonpost.com', source: 'Default' },
+        ]
+        feedItems = defaultSources.map((item) => (({
+          id: Date.now().toString() + Math.random(),
+          createdAt: new Date().toISOString(),
+          notes: '',
+          ...item,
+        })))
+        await saveToDB('feedItems', feedItems)
+      }
 
       set({
         habits: habits || [],

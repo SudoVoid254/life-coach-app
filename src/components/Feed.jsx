@@ -2,15 +2,6 @@ import { useState, useEffect, useRef } from 'react'
 import { useAppStore } from '../store/appStore'
 import { Plus, Trash2, ExternalLink, Clock, Bell, BellOff, RefreshCw, Home, Maximize2 } from 'lucide-react'
 
-const suggestedSources = [
-  { title: 'BBC News', url: 'https://bbc.com' },
-  { title: 'The New York Times', url: 'https://nytimes.com' },
-  { title: 'The Guardian', url: 'https://theguardian.com' },
-  { title: 'Reuters', url: 'https://reuters.com' },
-  { title: 'CNN', url: 'https://cnn.com' },
-  { title: 'The Washington Post', url: 'https://washingtonpost.com' },
-]
-
 export default function Feed() {
   const { feedItems, addFeedItem, deleteFeedItem } = useAppStore()
   const [showForm, setShowForm] = useState(false)
@@ -135,16 +126,6 @@ export default function Feed() {
       setSelectedSource(null)
       setIframeUrl(null)
     }
-  }
-
-  const handleAddSuggested = (source) => {
-    addFeedItem({
-      title: source.title,
-      url: source.url,
-      source: 'Suggested',
-      notes: '',
-      addedAt: new Date().toISOString(),
-    })
   }
 
   const handleSelectSource = (item) => {
@@ -372,31 +353,6 @@ export default function Feed() {
                   ))}
                 </div>
               )}
-            </div>
-          </div>
-
-          <div className="bg-slate-800 rounded-lg border border-slate-700 mt-4 overflow-hidden flex flex-col max-h-64">
-            <div className="p-3 border-b border-slate-700">
-              <h3 className="font-semibold text-sm text-slate-300">Suggested Sources</h3>
-            </div>
-            <div className="overflow-y-auto p-2">
-              <div className="space-y-1">
-                {suggestedSources.map((source, index) => (
-                  <div key={index} className="flex items-center gap-2">
-                    <div className="flex-1 p-3 bg-slate-700 rounded text-slate-200">
-                      <p className="font-medium text-sm truncate">{source.title}</p>
-                      <p className="text-xs opacity-70 truncate">{getDomain(source.url)}</p>
-                    </div>
-                    <button
-                      onClick={() => handleAddSuggested(source)}
-                      className="p-2 text-green-400 hover:text-green-300 hover:bg-green-900/20 rounded"
-                      title="Add source"
-                    >
-                      <Plus size={16} />
-                    </button>
-                  </div>
-                ))}
-              </div>
             </div>
           </div>
         </div>
