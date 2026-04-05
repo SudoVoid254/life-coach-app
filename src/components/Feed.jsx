@@ -7,9 +7,7 @@ const suggestedSources = [
   { title: 'The New York Times', url: 'https://nytimes.com' },
   { title: 'The Guardian', url: 'https://theguardian.com' },
   { title: 'Reuters', url: 'https://reuters.com' },
-  { title: 'Al Jazeera', url: 'https://aljazeera.com' },
   { title: 'CNN', url: 'https://cnn.com' },
-  { title: 'NPR', url: 'https://npr.org' },
   { title: 'The Washington Post', url: 'https://washingtonpost.com' },
 ]
 
