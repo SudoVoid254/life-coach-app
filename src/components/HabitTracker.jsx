@@ -1,11 +1,12 @@
 import { useState } from 'react'
 import { useAppStore } from '../store/appStore'
-import { Trash2, Plus, Check } from 'lucide-react'
-import { getStreak, formatDate } from '../utils/dateHelpers'
+import { Trash2, Plus, Check, Info } from 'lucide-react'
+import { getStreak, formatDate, formatDateTime } from '../utils/dateHelpers'
 
 export default function HabitTracker() {
   const { habits, addHabit, updateHabit, deleteHabit } = useAppStore()
   const [showForm, setShowForm] = useState(false)
+  const [selectedHabitId, setSelectedHabitId] = useState(null)
   const [formData, setFormData] = useState({
     name: '',
     description: '',
@@ -176,12 +177,21 @@ export default function HabitTracker() {
                       <p className="text-sm text-slate-400">{habit.description}</p>
                     )}
                   </div>
-                  <button
-                    onClick={() => deleteHabit(habit.id)}
-                    className="text-slate-400 hover:text-red-400 transition"
-                  >
-                    <Trash2 size={20} />
-                  </button>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => setSelectedHabitId(habit.id)}
+                      className="p-2 text-slate-400 hover:text-purple-400 transition"
+                      title="View Details"
+                    >
+                      <Info size={20} />
+                    </button>
+                    <button
+                      onClick={() => deleteHabit(habit.id)}
+                      className="p-2 text-slate-400 hover:text-red-400 transition"
+                    >
+                      <Trash2 size={20} />
+                    </button>
+                  </div>
                 </div>
 
                 <div className="flex items-center gap-4 mb-4">
@@ -224,6 +234,66 @@ export default function HabitTracker() {
               </div>
             )
           })}
+        </div>
+      )}
+
+      {selectedHabitId && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+          <div className="bg-slate-800 rounded-xl p-6 border border-slate-700 max-w-md w-full max-h-[80vh] overflow-y-auto">
+            <div className="flex justify-between items-center mb-6">
+              <h3 className="text-2xl font-bold">Habit Details</h3>
+              <button
+                onClick={() => setSelectedHabitId(null)}
+                className="text-slate-400 hover:text-white"
+              >
+                ✕
+              </button>
+            </div>
+
+            {(() => {
+              const habit = habits.find(h => h.id === selectedHabitId)
+              if (!habit) return null
+
+              return (
+                <div className="space-y-6">
+                  <div>
+                    <p className="text-sm text-slate-400 mb-1">Habit Name</p>
+                    <p className="text-lg font-semibold">{habit.name}</p>
+                  </div>
+
+                  <div>
+                    <p className="text-sm text-slate-400 mb-1">Created At</p>
+                    <p className="text-lg">{formatDateTime(habit.createdAt)}</p>
+                  </div>
+
+                  <div>
+                    <p className="text-sm text-slate-400 mb-2">Completion History</p>
+                    <div className="space-y-2 max-h-60 overflow-y-auto pr-2">
+                      {(habit.completions || []).length === 0 ? (
+                        <p className="text-slate-500 italic text-sm">No completions yet</p>
+                      ) : (
+                        [...(habit.completions || [])]
+                          .sort((a, b) => new Date(b) - new Date(a))
+                          .map((date, idx) => (
+                            <div key={idx} className="flex justify-between bg-slate-700/50 p-2 rounded text-sm">
+                              <span>{date}</span>
+                              <span className="text-slate-400">{formatDateTime(date).split(', ')[1] || ''}</span>
+                            </div>
+                          ))
+                      )}
+                    </div>
+                  </div>
+
+                  <button
+                    onClick={() => setSelectedHabitId(null)}
+                    className="w-full bg-slate-700 hover:bg-slate-600 py-2 rounded-lg transition"
+                  >
+                    Close
+                  </button>
+                </div>
+              )
+            })()}
+          </div>
         </div>
       )}
     </div>
