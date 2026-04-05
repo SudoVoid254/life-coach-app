@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { useAppStore } from '../store/appStore'
-import { Plus, Trash2, ExternalLink, Clock, Bell, BellOff, RefreshCw, Home, Maximize2 } from 'lucide-react'
+import { Plus, Trash2, ExternalLink, Clock, Bell, BellOff, Home } from 'lucide-react'
 
 export default function Feed() {
   const { feedItems, addFeedItem, deleteFeedItem } = useAppStore()
@@ -12,9 +12,7 @@ export default function Feed() {
     notes: '',
   })
   const [selectedSource, setSelectedSource] = useState(null)
-  const [iframeUrl, setIframeUrl] = useState(null)
-  const [iframeError, setIframeError] = useState(false)
-  
+
   // Time tracking state
   const [timeLimit, setTimeLimit] = useState(() => {
     const saved = localStorage.getItem('feedTimeLimit')
@@ -32,8 +30,6 @@ export default function Feed() {
   })
   const [showBreakReminder, setShowBreakReminder] = useState(false)
   const [breakRemindersEnabled, setBreakRemindersEnabled] = useState(true)
-  const sessionTimerRef = useRef(null)
-  const lastSaveRef = useRef(Date.now())
   const [isPageVisible, setIsPageVisible] = useState(true)
 
   // Save settings to localStorage
@@ -41,12 +37,32 @@ export default function Feed() {
     localStorage.setItem('feedTimeLimit', timeLimit.toString())
   }, [timeLimit])
 
-  // Track page visibility (pause timer when tab is hidden)
+  // Track page visibility and session time
   useEffect(() => {
     const handleVisibilityChange = () => {
-      setIsPageVisible(document.visibilityState === 'visible')
+      const visible = document.visibilityState === 'visible'
+      setIsPageVisible(visible)
+
+      if (visible) {
+        const startTime = localStorage.getItem('sessionStartTime')
+        if (startTime) {
+          const now = Date.now()
+          const deltaMs = now - parseInt(startTime, 10)
+          const deltaMin = Math.floor(deltaMs / 1000 / 60)
+
+          if (deltaMin > 0) {
+            setTodayUsage(prev => {
+              const newValue = prev + deltaMin
+              localStorage.setItem('feedUsage', newValue.toString())
+              localStorage.setItem('feedUsageDate', new Date().toDateString())
+              return newValue
+            })
+          }
+          localStorage.removeItem('sessionStartTime')
+        }
+      }
     }
-    
+
     document.addEventListener('visibilitychange', handleVisibilityChange)
     return () => document.removeEventListener('visibilitychange', handleVisibilityChange)
   }, [])
@@ -130,8 +146,6 @@ export default function Feed() {
 
   const handleSelectSource = (item) => {
     setSelectedSource(item)
-    setIframeUrl(item.url)
-    setIframeError(false)
   }
 
   const handleRefresh = () => {
@@ -155,6 +169,7 @@ export default function Feed() {
 
   const handleOpenExternal = () => {
     if (selectedSource) {
+      localStorage.setItem('sessionStartTime', Date.now().toString())
       window.open(selectedSource.url, '_blank', 'noopener,noreferrer')
     }
   }
@@ -264,8 +279,7 @@ export default function Feed() {
           className="bg-slate-800 rounded-lg p-6 border border-slate-700 mb-4"
         >
           <div className="bg-yellow-900/30 border border-yellow-700 rounded p-3 mb-4 text-sm text-yellow-300">
-            <strong>⚠️ Note:</strong> Some sites block embedding (Instagram, Twitter, Facebook, etc.). 
-            They'll open in a new tab instead. Sites like blogs, news, and documentation usually work great.
+            <strong>⚠️ Note:</strong> This app is a mindful launchpad. Sources will open in a new tab to preserve your privacy and avoid embedding restrictions.
           </div>
           <input
             type="text"
@@ -357,7 +371,7 @@ export default function Feed() {
           </div>
         </div>
 
-        {/* Embedded Content Area */}
+        {/* Source Profile Area */}
         <div className="flex-1 bg-slate-800 rounded-lg border border-slate-700 overflow-hidden flex flex-col">
           {!selectedSource ? (
             <div className="flex-1 flex items-center justify-center text-slate-400">
@@ -367,52 +381,37 @@ export default function Feed() {
                 <p className="text-sm mt-2">Or add a new one above</p>
               </div>
             </div>
-          ) : iframeError ? (
-            <div className="flex-1 flex items-center justify-center text-slate-400">
-              <div className="text-center max-w-md">
-                <p className="text-lg mb-4">⚠️ This site can't be embedded</p>
-                <p className="text-sm mb-4">
-                  {selectedSource.title} blocks embedding in iframes for security reasons.
-                </p>
+          ) : (
+            <div className="flex-1 flex items-center justify-center p-8">
+              <div className="max-w-lg w-full bg-slate-900/50 rounded-2xl border border-slate-700 p-8 text-center shadow-xl">
+                <div className="mb-6">
+                  <span className="px-3 py-1 rounded-full bg-purple-900/50 text-purple-400 text-xs font-medium border border-purple-700/50 uppercase tracking-wider">
+                    {getDomain(selectedSource.url)}
+                  </span>
+                  <h3 className="text-4xl font-bold mt-4 mb-2">{selectedSource.title}</h3>
+                  <p className="text-slate-400 italic">"Intentional Browsing"</p>
+                </div>
+
+                <div className="bg-slate-800/80 rounded-xl p-6 mb-8 border border-slate-700 text-left">
+                  <p className="text-xs font-semibold text-slate-500 uppercase mb-2 tracking-widest">Your Intention</p>
+                  <p className="text-slate-200 leading-relaxed">
+                    {selectedSource.notes || "No specific notes for this source. Visit with curiosity and intention."}
+                  </p>
+                </div>
+
                 <button
                   onClick={handleOpenExternal}
-                  className="flex items-center gap-2 bg-purple-600 hover:bg-purple-700 px-4 py-2 rounded transition mx-auto"
+                  className="group w-full flex items-center justify-center gap-3 bg-purple-600 hover:bg-purple-700 text-white py-4 rounded-xl transition-all hover:scale-[1.02] active:scale-95 font-bold text-lg"
                 >
-                  <ExternalLink size={18} />
-                  Open in New Tab
+                  Enter Site
+                  <ExternalLink size={20} className="group-hover:translate-x-1 transition-transform" />
                 </button>
+
+                <p className="text-xs text-slate-500 mt-4">
+                  The site will open in a new tab. Your time will be tracked when you return.
+                </p>
               </div>
             </div>
-          ) : (
-            <>
-              {/* Browser Toolbar */}
-              <div className="bg-slate-900 border-b border-slate-700 p-2 flex items-center gap-2">
-                <button
-                  onClick={handleRefresh}
-                  className="p-2 text-slate-400 hover:text-white hover:bg-slate-800 rounded"
-                  title="Refresh"
-                >
-                  <RefreshCw size={18} />
-                </button>
-                <div className="flex-1 bg-slate-800 rounded px-3 py-1.5 text-sm text-slate-300 truncate">
-                  {selectedSource.title}
-                </div>
-              </div>
-              
-              {/* Iframe */}
-              <div className="flex-1 relative bg-white">
-                {iframeUrl && (
-                  <iframe
-                    key={iframeUrl}
-                    src={iframeUrl}
-                    className="w-full h-full border-0"
-                    title={selectedSource.title}
-                    sandbox="allow-same-origin allow-scripts allow-popups allow-forms"
-                    onError={handleIframeError}
-                  />
-                )}
-              </div>
-            </>
           )}
         </div>
       </div>
