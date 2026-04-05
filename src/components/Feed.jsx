@@ -67,51 +67,21 @@ export default function Feed() {
     return () => document.removeEventListener('visibilitychange', handleVisibilityChange)
   }, [])
 
-  // Track time spent viewing feed content
+  // Handle daily usage reset
   useEffect(() => {
-    // Reset usage if it's a new day
     const today = new Date().toDateString()
     const savedDate = localStorage.getItem('feedUsageDate')
     if (savedDate !== today) {
       setTodayUsage(0)
       localStorage.setItem('feedUsageDate', today)
+      localStorage.setItem('feedUsage', '0')
     }
-
-    // Start tracking session time (only when actively viewing)
-    sessionTimerRef.current = setInterval(() => {
-      if (!isPageVisible || !selectedSource) {
-        lastSaveRef.current = Date.now()
-        return
-      }
-      
-      const now = Date.now()
-      const elapsed = Math.floor((now - lastSaveRef.current) / 1000) // seconds
-      
-      if (elapsed >= 10) { // Update every 10 seconds
-        const minutesToAdd = Math.floor(elapsed / 60)
-        if (minutesToAdd > 0) {
-          setTodayUsage(prev => {
-            const newValue = prev + minutesToAdd
-            localStorage.setItem('feedUsage', newValue.toString())
-            localStorage.setItem('feedUsageDate', today)
-            return newValue
-          })
-          lastSaveRef.current = now
-        }
-      }
-    }, 10000)
-
-    return () => {
-      if (sessionTimerRef.current) {
-        clearInterval(sessionTimerRef.current)
-      }
-    }
-  }, [isPageVisible, selectedSource])
+  }, [])
 
   // Show break reminder when approaching limit
   useEffect(() => {
     if (!breakRemindersEnabled) return
-    
+
     const warningThreshold = timeLimit * 0.8 // 80% of limit
     if (todayUsage >= warningThreshold && todayUsage < timeLimit) {
       setShowBreakReminder(true)
@@ -140,32 +110,12 @@ export default function Feed() {
     deleteFeedItem(id)
     if (selectedSource?.id === id) {
       setSelectedSource(null)
-      setIframeUrl(null)
     }
   }
 
   const handleSelectSource = (item) => {
     setSelectedSource(item)
   }
-
-  const handleRefresh = () => {
-    if (selectedSource) {
-      setIframeUrl(null)
-      setIframeError(false)
-      setTimeout(() => setIframeUrl(selectedSource.url), 100)
-    }
-  }
-
-  // Detect when iframe fails to load (timeout if content doesn't appear)
-  useEffect(() => {
-    if (iframeUrl && !iframeError) {
-      const timeout = setTimeout(() => {
-        setIframeError(true)
-      }, 4000) // 4 second timeout
-
-      return () => clearTimeout(timeout)
-    }
-  }, [iframeUrl, iframeError])
 
   const handleOpenExternal = () => {
     if (selectedSource) {
@@ -196,10 +146,6 @@ export default function Feed() {
       setTodayUsage(0)
       localStorage.setItem('feedUsage', '0')
     }
-  }
-
-  const handleIframeError = () => {
-    setIframeError(true)
   }
 
   return (
