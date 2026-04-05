@@ -53,11 +53,16 @@ export default function HabitTracker() {
   const getCompletionRate = (habit) => {
     const completions = habit.completions || []
     if (completions.length === 0) return 0
-    const daysSinceCreated = Math.max(
-      0,
-      Math.floor((new Date() - new Date(habit.createdAt)) / (1000 * 60 * 60 * 24)) + 1
-    )
-    const rate = Math.round((completions.length / (daysSinceCreated + 1)) * 100)
+
+    const createdDate = new Date(habit.createdAt)
+    const today = new Date()
+    const isCreatedToday = createdDate.toDateString() === today.toDateString()
+
+    const daysSinceCreated = Math.floor((today - createdDate) / (1000 * 60 * 60 * 24))
+
+    const totalDays = isCreatedToday ? 1 : daysSinceCreated + 1
+
+    const rate = Math.round((completions.length / totalDays) * 100)
     return Math.min(rate, 100) // Cap at 100%
   }
 
