@@ -1,12 +1,19 @@
 import { useState } from 'react'
 import { useAppStore } from '../store/appStore'
-import { Trash2, Plus, Check, Info } from 'lucide-react'
-import { getStreak, formatDate, formatDateTime } from '../utils/dateHelpers'
+import { Trash2, Plus, Check, Info, Edit } from 'lucide-react'
+import { getStreak, formatDate, formatDateTime, isSameDay } from '../utils/dateHelpers'
 
 export default function HabitTracker() {
   const { habits, addHabit, updateHabit, deleteHabit } = useAppStore()
   const [showForm, setShowForm] = useState(false)
   const [selectedHabitId, setSelectedHabitId] = useState(null)
+  const [editingHabitId, setEditingHabitId] = useState(null)
+  const [editFormData, setEditFormData] = useState({
+    name: '',
+    description: '',
+    frequency: 'daily',
+    color: 'purple',
+  })
   const [formData, setFormData] = useState({
     name: '',
     description: '',
@@ -40,13 +47,13 @@ export default function HabitTracker() {
 
   const toggleCompletion = (habitId) => {
     const habit = habits.find((h) => h.id === habitId)
-    const today = formatDate(new Date())
     const completions = habit.completions || []
-    const isCompletedToday = completions.includes(today)
+
+    const isCompletedToday = completions.some(c => isSameDay(new Date(c), new Date()))
 
     const newCompletions = isCompletedToday
-      ? completions.filter((c) => c !== today)
-      : [...completions, today]
+      ? completions.filter(c => !isSameDay(new Date(c), new Date()))
+      : [...completions, new Date().toISOString()]
 
     updateHabit(habitId, { completions: newCompletions })
   }
@@ -78,8 +85,7 @@ export default function HabitTracker() {
   }
 
   const isCompletedToday = (habit) => {
-    const today = formatDate(new Date())
-    return (habit.completions || []).includes(today)
+    return (habit.completions || []).some(c => isSameDay(new Date(c), new Date()))
   }
 
   return (
@@ -161,6 +167,77 @@ export default function HabitTracker() {
       ) : (
         <div className="space-y-4">
           {habits.map((habit) => {
+            if (editingHabitId === habit.id) {
+              return (
+                <div key={habit.id} className="bg-slate-800 rounded-lg p-6 border border-blue-500 shadow-lg transition">
+                  <div className="flex justify-between items-center mb-4">
+                    <h3 className="text-lg font-bold text-blue-400">Edit Habit</h3>
+                    <button
+                      onClick={() => setEditingHabitId(null)}
+                      className="text-slate-400 hover:text-white"
+                    >
+                      ✕
+                    </button>
+                  </div>
+                  <div className="space-y-4">
+                    <input
+                      type="text"
+                      value={editFormData.name}
+                      onChange={(e) => setEditFormData({ ...editFormData, name: e.target.value })}
+                      className="w-full bg-slate-700 text-white px-4 py-2 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      placeholder="Habit name"
+                    />
+                    <textarea
+                      value={editFormData.description}
+                      onChange={(e) => setEditFormData({ ...editFormData, description: e.target.value })}
+                      className="w-full bg-slate-700 text-white px-4 py-2 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      placeholder="Description"
+                      rows="2"
+                    />
+                    <div className="flex gap-4">
+                      <select
+                        value={editFormData.frequency}
+                        onChange={(e) => setEditFormData({ ...editFormData, frequency: e.target.value })}
+                        className="flex-1 bg-slate-700 text-white px-4 py-2 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      >
+                        <option value="daily">Daily</option>
+                        <option value="weekly">Weekly</option>
+                        <option value="monthly">Monthly</option>
+                      </select>
+                      <select
+                        value={editFormData.color}
+                        onChange={(e) => setEditFormData({ ...editFormData, color: e.target.value })}
+                        className="flex-1 bg-slate-700 text-white px-4 py-2 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      >
+                        {Object.keys(colors).map((c) => (
+                          <option key={c} value={c}>
+                            {c.charAt(0).toUpperCase() + c.slice(1)}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                    <div className="flex gap-4 pt-2">
+                      <button
+                        onClick={() => {
+                          updateHabit(habit.id, editFormData)
+                          setEditingHabitId(null)
+                        }}
+                        className="flex-1 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded transition font-semibold"
+                      >
+                        Save Changes
+                      </button>
+                      <button
+                        onClick={() => setEditingHabitId(null)}
+                        className="flex-1 bg-slate-700 hover:bg-slate-600 text-white px-4 py-2 rounded transition"
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )
+            }
+
             const completed = isCompletedToday(habit)
             const streak = getStreak(habit.completions || [])
             const rate = getCompletionRate(habit)
@@ -178,6 +255,21 @@ export default function HabitTracker() {
                     )}
                   </div>
                   <div className="flex gap-2">
+                    <button
+                      onClick={() => {
+                        setEditingHabitId(habit.id)
+                        setEditFormData({
+                          name: habit.name,
+                          description: habit.description,
+                          frequency: habit.frequency,
+                          color: habit.color,
+                        })
+                      }}
+                      className="p-2 text-slate-400 hover:text-blue-400 transition"
+                      title="Edit Habit"
+                    >
+                      <Edit size={20} />
+                    </button>
                     <button
                       onClick={() => setSelectedHabitId(habit.id)}
                       className="p-2 text-slate-400 hover:text-purple-400 transition"

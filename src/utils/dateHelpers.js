@@ -1,6 +1,7 @@
 // Format date to YYYY-MM-DD
 export function formatDate(date) {
-  return new Date(date).toISOString().split('T')[0]
+  const d = new Date(date)
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
 }
 
 // Format date with time
@@ -22,6 +23,17 @@ export function getEndOfDay(date = new Date()) {
   return d
 }
 
+// Check if two dates are on the same local calendar day
+export function isSameDay(date1, date2) {
+  const d1 = new Date(date1)
+  const d2 = new Date(date2)
+  return (
+    d1.getFullYear() === d2.getFullYear() &&
+    d1.getMonth() === d2.getMonth() &&
+    d1.getDate() === d2.getDate()
+  )
+}
+
 // Get days between two dates
 export function daysBetween(date1, date2) {
   const d1 = new Date(date1)
@@ -35,22 +47,33 @@ export function daysBetween(date1, date2) {
 export function getStreak(completions) {
   if (!completions || completions.length === 0) return 0
 
-  const sorted = [...completions].sort((a, b) => new Date(b) - new Date(a))
+  // Normalize completions to unique local date strings (YYYY-MM-DD)
+  const dateSet = new Set(
+    completions.map((c) => formatDate(c))
+  )
+
+  const todayStr = formatDate(new Date())
+  const yesterday = new Date()
+  yesterday.setDate(yesterday.getDate() - 1)
+  const yesterdayStr = formatDate(yesterday)
+
   let streak = 0
-  let currentDate = new Date()
-  currentDate.setHours(0, 0, 0, 0)
+  let checkDate = new Date()
 
-  for (const completion of sorted) {
-    const compDate = new Date(completion)
-    compDate.setHours(0, 0, 0, 0)
+  // If not completed today, check if completed yesterday to maintain streak
+  if (!dateSet.has(todayStr)) {
+    if (!dateSet.has(yesterdayStr)) {
+      return 0
+    }
+    // Start counting from yesterday
+    checkDate.setDate(checkDate.getDate() - 1)
+  }
 
-    if (currentDate - compDate === 0) {
+  // Count backwards
+  while (true) {
+    if (dateSet.has(formatDate(checkDate))) {
       streak++
-      currentDate.setDate(currentDate.getDate() - 1)
-    } else if (currentDate - compDate === 86400000) {
-      // 24 hours in ms
-      streak++
-      currentDate.setDate(currentDate.getDate() - 1)
+      checkDate.setDate(checkDate.getDate() - 1)
     } else {
       break
     }
